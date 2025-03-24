@@ -3,11 +3,15 @@ import time
 
 import numpy as np
 import pyautogui
+from dotenv import load_dotenv
 from PIL import ImageGrab
 
 from detect_number import get_number_from_image
 from detect_template import detect_template
 from utils import perform_click
+
+load_dotenv()
+
 
 # OPTIONAL: Disable failsafe (only if you're sure)
 pyautogui.FAILSAFE = False
@@ -17,8 +21,12 @@ print(f"Detected screen size: {screen_width}x{screen_height}")
 
 threshold = float(os.getenv("THRESHOLD", 0.94))
 elevator_speed = float(os.getenv("ELEVATOR_SPEED", 11.25))  # floors per second
-interval = float(os.getenv("INTERVAL", 1))  # seconds
-vip = bool(os.getenv("VIP", False))
+tick_interval = float(os.getenv("TICK_INTERVAL", 1))  # seconds
+vip = os.getenv("VIP", "false").lower() in ("1", "true", "yes")
+debug_mode = os.getenv("DEBUG_MODE", "false").lower() in ("1", "true", "yes")
+
+print(f"debug is {debug_mode}")
+
 
 # Which buttons to click every tick
 buttons_to_click = ["red_x", "cancel", "continue_button", "elevator_red"]
@@ -28,12 +36,13 @@ print("Press Ctrl+C in terminal to stop.")
 
 try:
     while True:
-        time.sleep(interval)
+        time.sleep(tick_interval)
 
         # Capture screen
         screenshot = ImageGrab.grab(bbox=(0, 0, screen_width, screen_height))
         screenshot_np = np.array(screenshot)
-        screenshot.save("screenshot.debug.png")
+        if debug_mode:
+            screenshot.save("screenshot.debug.png")
 
         # Buttons to click
         for name in buttons_to_click:
@@ -75,7 +84,8 @@ try:
             crop_x = max(0, min(crop_x, screen_width - 50))
             crop_y = max(0, min(crop_y, screen_height - 50))
             cropped_img = screenshot.crop((crop_x, crop_y, crop_x + 20, crop_y + 14))
-            cropped_img.save("speech.debug.png")
+            if debug_mode:
+                cropped_img.save("speech.debug.png")
 
             number = get_number_from_image(cropped_img)
 
@@ -87,7 +97,7 @@ try:
 
             # Hold for time
             pyautogui.mouseDown()
-            time.sleep(0.65 * number - 0.1)
+            time.sleep(0.65 * number / elevator_speed - 0.1)
             pyautogui.mouseUp()
 
             while detect_template(
