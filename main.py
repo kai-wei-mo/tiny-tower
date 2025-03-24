@@ -18,6 +18,7 @@ print(f"Detected screen size: {screen_width}x{screen_height}")
 threshold = float(os.getenv("THRESHOLD", 0.94))
 elevator_speed = float(os.getenv("ELEVATOR_SPEED", 11.25))  # floors per second
 interval = float(os.getenv("INTERVAL", 1))  # seconds
+vip = bool(os.getenv("VIP", False))
 
 # Which buttons to click every tick
 buttons_to_click = ["red_x", "cancel", "continue_button", "elevator_red"]
@@ -51,6 +52,9 @@ try:
             print(f"Clicking it at {center_x, center_y}")
 
             perform_click(center_x, center_y)
+
+        if vip:
+            continue
 
         # Detect speech bubble
         result = detect_template(
